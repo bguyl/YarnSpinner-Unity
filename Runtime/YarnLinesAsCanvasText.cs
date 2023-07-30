@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using JetBrains.Annotations;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 
@@ -18,7 +19,7 @@ namespace Yarn.Unity
 
         [SerializeField] public StringObjectDictionary stringsToViews = new StringObjectDictionary();
 
-        [SerializeField] bool _useTextMeshPro = default;
+        [SerializeField, UsedImplicitly] bool _useTextMeshPro = default;
 
         void Start()
         {
