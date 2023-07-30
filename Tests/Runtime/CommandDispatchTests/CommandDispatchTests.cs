@@ -27,10 +27,12 @@ namespace Yarn.Unity.Tests
 
         public void Setup()
         {
+#if UNITY_EDITOR
             if (Directory.Exists(TestFilesDirectoryPath) == false) {
                 UnityEditor.AssetDatabase.CreateFolder("Assets", TestFolderName);
                 UnityEditor.AssetDatabase.CopyAsset(TestScriptPathSource, TestScriptPathInProject);
             }
+#endif
 
 #if UNITY_EDITOR && !UNITY_2021_2_OR_NEWER
             // On Unity 2021.1 and earlier, we need to manually generate the
@@ -42,14 +44,17 @@ namespace Yarn.Unity.Tests
             var source = Yarn.Unity.ActionAnalyser.Analyser.GenerateRegistrationFileSource(actions, "Yarn.Unity.Tests.Generated");
             
             System.IO.File.WriteAllText(outputFilePath, source);
-#endif
+#elif UNITY_EDITOR
             UnityEditor.AssetDatabase.Refresh();
+#endif
         }
 
         public void Cleanup()
         {
+#if UNITY_EDITOR
             UnityEditor.AssetDatabase.DeleteAsset(TestFilesDirectoryPath);
             UnityEditor.AssetDatabase.Refresh();
+#endif
         }
 
         [Test]
