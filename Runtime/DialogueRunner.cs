@@ -1,27 +1,5 @@
 /*
-
-The MIT License (MIT)
-
-Copyright (c) 2015-2017 Secret Lab Pty. Ltd. and Yarn Spinner contributors.
-
-Permission is hereby granted, free of charge, to any person obtaining a
-copy of this software and associated documentation files (the "Software"),
-to deal in the Software without restriction, including without limitation
-the rights to use, copy, modify, merge, publish, distribute, sublicense,
-and/or sell copies of the Software, and to permit persons to whom the
-Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
-
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
 */
 
 using UnityEngine;
@@ -229,13 +207,17 @@ namespace Yarn.Unity
         /// </summary>
         public void SetProject(YarnProject newProject)
         {
+            yarnProject = newProject;
+
             CommandDispatcher.SetupForProject(newProject);
 
             Dialogue.SetProgram(newProject.Program);
 
-            if (lineProvider != null) {
+            if (lineProvider != null)
+            {
                 lineProvider.YarnProject = newProject;
             }
+            SetInitialVariables();
         }
 
         /// <summary>
@@ -368,25 +350,6 @@ namespace Yarn.Unity
         }
 
         /// <summary>
-        /// Starts running the dialogue again.
-        /// </summary>
-        /// <remarks>
-        /// If <paramref name="nodeName"/> is null, the node specified by
-        /// <see cref="startNode"/> is attempted, followed the currently
-        /// running node. If none of these options are available, an <see
-        /// cref="ArgumentNullException"/> is thrown.
-        /// </remarks>
-        /// <exception cref="ArgumentNullException">Thrown when a node to
-        /// restart the dialogue from cannot be found.</exception>
-        [Obsolete("Use " + nameof(StartDialogue) + "(nodeName) instead.")]
-        public void ResetDialogue(string nodeName = null)
-        {
-            nodeName = nodeName ?? startNode ?? CurrentNodeName ?? throw new ArgumentNullException($"Cannot reset dialogue: couldn't figure out a node to restart the dialogue from.");
-
-            StartDialogue(nodeName);
-        }
-
-        /// <summary>
         /// Unloads all nodes from the <see cref="Dialogue"/>.
         /// </summary>
         public void Clear()
@@ -456,80 +419,80 @@ namespace Yarn.Unity
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler(string commandName, System.Func<Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
 
+        // GYB13 START
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1>(string commandName, System.Func<T1, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2>(string commandName, System.Func<T1, T2, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3>(string commandName, System.Func<T1, T2, T3, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4>(string commandName, System.Func<T1, T2, T3, T4, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4, T5>(string commandName, System.Func<T1, T2, T3, T4, T5, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4, T5, T6>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, Coroutine> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        // GYB13 END
 
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler(string commandName, System.Func<IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
 
+        // GYB14 START
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1>(string commandName, System.Func<T1, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2>(string commandName, System.Func<T1, T2, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3>(string commandName, System.Func<T1, T2, T3, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4>(string commandName, System.Func<T1, T2, T3, T4, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4, T5>(string commandName, System.Func<T1, T2, T3, T4, T5, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4, T5, T6>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string commandName, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, IEnumerator> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        // GYB14 END
 
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler(string commandName, System.Action handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
 
-
+        // GYB15 START
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1>(string commandName, System.Action<T1> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2>(string commandName, System.Action<T1, T2> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3>(string commandName, System.Action<T1, T2, T3> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4>(string commandName, System.Action<T1, T2, T3, T4> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4, T5>(string commandName, System.Action<T1, T2, T3, T4, T5> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
-
         /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
         public void AddCommandHandler<T1, T2, T3, T4, T5, T6>(string commandName, System.Action<T1, T2, T3, T4, T5, T6> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
-
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7>(string commandName, System.Action<T1, T2, T3, T4, T5, T6, T7> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8>(string commandName, System.Action<T1, T2, T3, T4, T5, T6, T7, T8> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string commandName, System.Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        /// <inheritdoc cref="AddCommandHandler(string, Delegate)"/>
+        public void AddCommandHandler<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string commandName, System.Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> handler) => CommandDispatcher.AddCommandHandler(commandName, handler);
+        // GYB15 END
 
         /// <summary>
         /// Removes a command handler.
@@ -569,29 +532,38 @@ namespace Yarn.Unity
         /// <typeparam name="TResult">The type of the value that the function should return.</typeparam>
         public void AddFunction<TResult>(string name, System.Func<TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
 
+        // GYB16 START
         /// <inheritdoc cref="AddFunction{TResult}(string, Func{TResult})" />
         /// <typeparam name="T1">The type of the first parameter to the function.</typeparam>
-        public void AddFunction<TResult, T1>(string name, System.Func<TResult, T1> implementation) => CommandDispatcher.AddFunction(name, implementation);
-
-        /// <inheritdoc cref="AddFunction{TResult,T1}(string, Func{TResult,T1})" />
+        public void AddFunction<T1, TResult>(string name, System.Func<T1, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,TResult}(string, Func{T1,TResult})" />
         /// <typeparam name="T2">The type of the second parameter to the function.</typeparam>
-        public void AddFunction<TResult, T1, T2>(string name, System.Func<TResult, T1, T2> implementation) => CommandDispatcher.AddFunction(name, implementation);
-
-        /// <inheritdoc cref="AddFunction{TResult,T1,T2}(string, Func{TResult,T1,T2})" />
+        public void AddFunction<T1, T2, TResult>(string name, System.Func<T1, T2, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,TResult}(string, Func{T1,T2,TResult})" />
         /// <typeparam name="T3">The type of the third parameter to the function.</typeparam>
-        public void AddFunction<TResult, T1, T2, T3>(string name, System.Func<TResult, T1, T2, T3> implementation) => CommandDispatcher.AddFunction(name, implementation);
-
-        /// <inheritdoc cref="AddFunction{TResult,T1,T2,T3}(string, Func{TResult,T1,T2,T3})" />
+        public void AddFunction<T1, T2, T3, TResult>(string name, System.Func<T1, T2, T3, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,T3,TResult}(string, Func{T1,T2,T3,TResult})" />
         /// <typeparam name="T4">The type of the fourth parameter to the function.</typeparam>
-        public void AddFunction<TResult, T1, T2, T3, T4>(string name, System.Func<TResult, T1, T2, T3, T4> implementation) => CommandDispatcher.AddFunction(name, implementation);
-
-        /// <inheritdoc cref="AddFunction{TResult,T1,T2,T3,T4}(string, Func{TResult,T1,T2,T3,T4})" />
+        public void AddFunction<T1, T2, T3, T4, TResult>(string name, System.Func<T1, T2, T3, T4, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,T3,T4,TResult}(string, Func{T1,T2,T3,T4,TResult})" />
         /// <typeparam name="T5">The type of the fifth parameter to the function.</typeparam>
-        public void AddFunction<TResult, T1, T2, T3, T4, T5>(string name, System.Func<TResult, T1, T2, T3, T4, T5> implementation) => CommandDispatcher.AddFunction(name, implementation);
-
-        /// <inheritdoc cref="AddFunction{TResult,T1,T2,T3,T4,T5}(string, Func{TResult,T1,T2,T3,T4,T5})" />
+        public void AddFunction<T1, T2, T3, T4, T5, TResult>(string name, System.Func<T1, T2, T3, T4, T5, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,T3,T4,T5,TResult}(string, Func{T1,T2,T3,T4,T5,TResult})" />
         /// <typeparam name="T6">The type of the sixth parameter to the function.</typeparam>
-        public void AddFunction<TResult, T1, T2, T3, T4, T5, T6>(string name, System.Func<TResult, T1, T2, T3, T4, T5, T6> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        public void AddFunction<T1, T2, T3, T4, T5, T6, TResult>(string name, System.Func<T1, T2, T3, T4, T5, T6, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,T3,T4,T5,T6,TResult}(string, Func{T1,T2,T3,T4,T5,T6,TResult})" />
+        /// <typeparam name="T7">The type of the seventh parameter to the function.</typeparam>
+        public void AddFunction<T1, T2, T3, T4, T5, T6, T7, TResult>(string name, System.Func<T1, T2, T3, T4, T5, T6, T7, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,T3,T4,T5,T6,T7,TResult}(string, Func{T1,T2,T3,T4,T5,T6,T7,TResult})" />
+        /// <typeparam name="T8">The type of the eighth parameter to the function.</typeparam>
+        public void AddFunction<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(string name, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,T3,T4,T5,T6,T7,T8,TResult}(string, Func{T1,T2,T3,T4,T5,T6,T7,T8,TResult})" />
+        /// <typeparam name="T9">The type of the ninth parameter to the function.</typeparam>
+        public void AddFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(string name, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        /// <inheritdoc cref="AddFunction{T1,T2,T3,T4,T5,T6,T7,T8,T9,TResult}(string, Func{T1,T2,T3,T4,T5,T6,T7,T8,T9,TResult})" />
+        /// <typeparam name="T10">The type of the tenth parameter to the function.</typeparam>
+        public void AddFunction<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(string name, System.Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> implementation) => CommandDispatcher.AddFunction(name, implementation);
+        // GYB16 END
 
         /// <summary>
         /// Remove a registered function.
@@ -775,54 +747,76 @@ namespace Yarn.Unity
 
         internal void HandleOptions(OptionSet options)
         {
-            currentOptions = options;
-
-            DialogueOption[] optionSet = new DialogueOption[options.Options.Length];
-            for (int i = 0; i < options.Options.Length; i++)
+            // see comments in HandleLine for why we do this
+            if (lineProvider.LinesAvailable)
             {
-                // Localize the line associated with the option
-                var localisedLine = lineProvider.GetLocalizedLine(options.Options[i].Line);
-                var text = Dialogue.ExpandSubstitutions(localisedLine.RawText, options.Options[i].Line.Substitutions);
+                HandleOptionsInternal();
+            }
+            else
+            {
+                StartCoroutine(WaitUntilLinesAvailable());
+            }
 
-                Dialogue.LanguageCode = lineProvider.LocaleCode;
-
-                try
+            IEnumerator WaitUntilLinesAvailable()
+            {
+                while (!lineProvider.LinesAvailable)
                 {
-                    localisedLine.Text = Dialogue.ParseMarkup(text);
+                    yield return null;
                 }
-                catch (Yarn.Markup.MarkupParseException e)
+                HandleOptionsInternal();
+            }
+
+            void HandleOptionsInternal()
+            {
+                currentOptions = options;
+
+                DialogueOption[] optionSet = new DialogueOption[options.Options.Length];
+                for (int i = 0; i < options.Options.Length; i++)
                 {
-                    // Parsing the markup failed. We'll log a warning, and
-                    // produce a markup result that just contains the raw text.
-                    Debug.LogWarning($"Failed to parse markup in \"{text}\": {e.Message}");
-                    localisedLine.Text = new Yarn.Markup.MarkupParseResult
+                    // Localize the line associated with the option
+                    var localisedLine = lineProvider.GetLocalizedLine(options.Options[i].Line);
+                    var text = Dialogue.ExpandSubstitutions(localisedLine.RawText, options.Options[i].Line.Substitutions);
+
+                    Dialogue.LanguageCode = lineProvider.LocaleCode;
+
+                    try
                     {
-                        Text = text,
-                        Attributes = new List<Yarn.Markup.MarkupAttribute>()
+                        localisedLine.Text = Dialogue.ParseMarkup(text);
+                    }
+                    catch (Yarn.Markup.MarkupParseException e)
+                    {
+                        // Parsing the markup failed. We'll log a warning, and
+                        // produce a markup result that just contains the raw text.
+                        Debug.LogWarning($"Failed to parse markup in \"{text}\": {e.Message}");
+                        localisedLine.Text = new Yarn.Markup.MarkupParseResult
+                        {
+                            Text = text,
+                            Attributes = new List<Yarn.Markup.MarkupAttribute>()
+                        };
+                    }
+
+                    optionSet[i] = new DialogueOption
+                    {
+                        TextID = options.Options[i].Line.ID,
+                        DialogueOptionID = options.Options[i].ID,
+                        Line = localisedLine,
+                        IsAvailable = options.Options[i].IsAvailable,
                     };
                 }
+                
+                // Don't allow selecting options on the same frame that we
+                // provide them
+                IsOptionSelectionAllowed = false;
 
-                optionSet[i] = new DialogueOption
+                foreach (var dialogueView in dialogueViews)
                 {
-                    TextID = options.Options[i].Line.ID,
-                    DialogueOptionID = options.Options[i].ID,
-                    Line = localisedLine,
-                    IsAvailable = options.Options[i].IsAvailable,
-                };
+                    if (dialogueView == null || dialogueView.isActiveAndEnabled == false) continue;
+
+                    dialogueView.RunOptions(optionSet, selectAction);
+                }
+
+                IsOptionSelectionAllowed = true;
             }
-            
-            // Don't allow selecting options on the same frame that we
-            // provide them
-            IsOptionSelectionAllowed = false;
-
-            foreach (var dialogueView in dialogueViews)
-            {
-                if (dialogueView == null || dialogueView.isActiveAndEnabled == false) continue;
-
-                dialogueView.RunOptions(optionSet, selectAction);
-            }
-
-            IsOptionSelectionAllowed = true;
         }
 
         void HandleDialogueComplete()
@@ -891,71 +885,99 @@ namespace Yarn.Unity
         /// <param name="line">The line to send to the dialogue views.</param>
         internal void HandleLine(Line line)
         {
-            // Get the localized line from our line provider
-            CurrentLine = lineProvider.GetLocalizedLine(line);
+            // TODO: make a new "lines for node" method that can be called so that people can manually call the preload
 
-            // Expand substitutions
-            var text = Dialogue.ExpandSubstitutions(CurrentLine.RawText, CurrentLine.Substitutions);
-
-            if (text == null)
+            // it is possible at this point depending on the flow into handling the line that the line provider hasn't finished it's loads
+            // as such we will need to hold here until the line provider has gotten all it's lines loaded
+            // in testing this has been very hard to trigger without having bonkers huge nodes jumping to very asset rich nodes
+            // so if you think you are going to hit this you should preload all the lines ahead of time
+            // but don't worry about it most of the time
+            if (lineProvider.LinesAvailable)
             {
-                Debug.LogWarning($"Dialogue Runner couldn't expand substitutions in Yarn Project [{ yarnProject.name }] node [{ CurrentNodeName }] with line ID [{ CurrentLine.TextID }]. "
-                    + "This usually happens because it couldn't find text in the Localization. The line may not be tagged properly. "
-                    + "Try re-importing this Yarn Program. "
-                    + "For now, Dialogue Runner will swap in CurrentLine.RawText.");
-                text = CurrentLine.RawText;
+                // we just move on normally
+                HandleLineInternal();
+            }
+            else
+            {
+                StartCoroutine(WaitUntilLinesAvailable());
             }
 
-            // Render the markup
-            Dialogue.LanguageCode = lineProvider.LocaleCode;
-
-            try
+            IEnumerator WaitUntilLinesAvailable()
             {
-                CurrentLine.Text = Dialogue.ParseMarkup(text);
-            }
-            catch (Yarn.Markup.MarkupParseException e)
-            {
-                // Parsing the markup failed. We'll log a warning, and
-                // produce a markup result that just contains the raw text.
-                Debug.LogWarning($"Failed to parse markup in \"{text}\": {e.Message}");
-                CurrentLine.Text = new Yarn.Markup.MarkupParseResult
+                while (!lineProvider.LinesAvailable)
                 {
-                    Text = text,
-                    Attributes = new List<Yarn.Markup.MarkupAttribute>()
-                };
+                    yield return null;
+                }
+                HandleLineInternal();
             }
-
-            // Clear the set of active dialogue views, just in case
-            ActiveDialogueViews.Clear();
-
-            // the following is broken up into two stages because otherwise if the 
-            // first view happens to finish first once it calls dialogue complete
-            // it will empty the set of active views resulting in the line being considered
-            // finished by the runner despite there being a bunch of views still waiting
-            // so we do it over two loops.
-            // the first finds every active view and flags it as such
-            // the second then goes through them all and gives them the line
-
-            // Mark this dialogue view as active
-            foreach (var dialogueView in dialogueViews)
+            void HandleLineInternal()
             {
-                if (dialogueView == null || dialogueView.isActiveAndEnabled == false)
+                // Get the localized line from our line provider
+                CurrentLine = lineProvider.GetLocalizedLine(line);
+
+                // Expand substitutions
+                var text = Dialogue.ExpandSubstitutions(CurrentLine.RawText, CurrentLine.Substitutions);
+
+                if (text == null)
                 {
-                    continue;
+                    Debug.LogWarning($"Dialogue Runner couldn't expand substitutions in Yarn Project [{ yarnProject.name }] node [{ CurrentNodeName }] with line ID [{ CurrentLine.TextID }]. "
+                        + "This usually happens because it couldn't find text in the Localization. The line may not be tagged properly. "
+                        + "Try re-importing this Yarn Program. "
+                        + "For now, Dialogue Runner will swap in CurrentLine.RawText.");
+                    text = CurrentLine.RawText;
                 }
 
-                ActiveDialogueViews.Add(dialogueView);
-            }
-            // Send line to all active dialogue views
-            foreach (var dialogueView in dialogueViews)
-            {
-                if (dialogueView == null || dialogueView.isActiveAndEnabled == false)
+                // Render the markup
+                Dialogue.LanguageCode = lineProvider.LocaleCode;
+
+                try
                 {
-                    continue;
+                    CurrentLine.Text = Dialogue.ParseMarkup(text);
+                }
+                catch (Yarn.Markup.MarkupParseException e)
+                {
+                    // Parsing the markup failed. We'll log a warning, and
+                    // produce a markup result that just contains the raw text.
+                    Debug.LogWarning($"Failed to parse markup in \"{text}\": {e.Message}");
+                    CurrentLine.Text = new Yarn.Markup.MarkupParseResult
+                    {
+                        Text = text,
+                        Attributes = new List<Yarn.Markup.MarkupAttribute>()
+                    };
                 }
 
-                dialogueView.RunLine(CurrentLine,
-                    () => DialogueViewCompletedDelivery(dialogueView));
+                // Clear the set of active dialogue views, just in case
+                ActiveDialogueViews.Clear();
+
+                // the following is broken up into two stages because otherwise if the 
+                // first view happens to finish first once it calls dialogue complete
+                // it will empty the set of active views resulting in the line being considered
+                // finished by the runner despite there being a bunch of views still waiting
+                // so we do it over two loops.
+                // the first finds every active view and flags it as such
+                // the second then goes through them all and gives them the line
+
+                // Mark this dialogue view as active
+                foreach (var dialogueView in dialogueViews)
+                {
+                    if (dialogueView == null || dialogueView.isActiveAndEnabled == false)
+                    {
+                        continue;
+                    }
+
+                    ActiveDialogueViews.Add(dialogueView);
+                }
+                // Send line to all active dialogue views
+                foreach (var dialogueView in dialogueViews)
+                {
+                    if (dialogueView == null || dialogueView.isActiveAndEnabled == false)
+                    {
+                        continue;
+                    }
+
+                    dialogueView.RunLine(CurrentLine,
+                        () => DialogueViewCompletedDelivery(dialogueView));
+                }
             }
         }
 
@@ -1028,8 +1050,6 @@ namespace Yarn.Unity
 
             onSuccessfulDispatch();
         }
-
-        
 
         private void PrepareForLines(IEnumerable<string> lineIDs)
         {
@@ -1302,6 +1322,7 @@ namespace Yarn.Unity
         /// cref="VariableStorageBehaviour.SetAllVariables(Dictionary{string,
         /// float}, Dictionary{string, string}, Dictionary{string, bool},
         /// bool)"/>
+        [Obsolete("LoadStateFromPlayerPrefs is deprecated, please use LoadStateFromPersistentStorage instead.")]
         public bool LoadStateFromPlayerPrefs(string SaveKey = "YarnBasicSave")
         {
             if (PlayerPrefs.HasKey(SaveKey))
@@ -1329,6 +1350,45 @@ namespace Yarn.Unity
         }
 
         /// <summary>
+        /// Loads all variables from the requested file in persistent storage
+        /// into the Dialogue Runner's variable storage.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method loads the file <paramref name="saveFileName"/> from the
+        /// persistent data storage and attempts to read it as JSON. This is
+        /// then deserialised and loaded into the <see cref="VariableStorage"/>.
+        /// </para>
+        /// <para>
+        /// The loaded information can be stored via the <see
+        /// cref="SaveStateToPersistentStorage"/> method.
+        /// </para>
+        /// </remarks>
+        /// <param name="saveFileName">the name the save file should have on
+        /// disc, including any file extension</param>
+        /// <returns><see langword="true"/> if the variables were successfully
+        /// loaded from the player preferences; <see langword="false"/>
+        /// otherwise.</returns>
+        public bool LoadStateFromPersistentStorage(string saveFileName)
+        {
+            var path = System.IO.Path.Combine(Application.persistentDataPath, saveFileName);
+
+            try
+            {
+                var saveData = System.IO.File.ReadAllText(path);
+                var dictionaries = DeserializeAllVariablesFromJSON(saveData);
+                _variableStorage.SetAllVariables(dictionaries.Item1, dictionaries.Item2, dictionaries.Item3);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to load save state at {path}: {e.Message}");
+                return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
         /// Saves all variables in the Dialogue Runner's variable storage into
         /// the <see cref="PlayerPrefs"/> object.
         /// </summary>
@@ -1347,11 +1407,51 @@ namespace Yarn.Unity
         /// <param name="SaveKey">The key to use when storing the
         /// variables.</param>
         /// <seealso cref="VariableStorageBehaviour.GetAllVariables"/>
+        [Obsolete("SaveStateToPlayerPrefs is deprecated, please use SaveStateToPersistentStorage instead.")]
         public void SaveStateToPlayerPrefs(string SaveKey = "YarnBasicSave")
         {
             var data = SerializeAllVariablesToJSON();
             PlayerPrefs.SetString(SaveKey, data);
             PlayerPrefs.Save();
+        }
+
+        /// <summary>
+        /// Saves all variables from variable storage into the persistent
+        /// storage.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// This method attempts to writes the contents of <see
+        /// cref="VariableStorage"/> as a JSON file and saves it to the
+        /// persistent data storage under the file name <paramref
+        /// name="saveFileName"/>. The saved information can be loaded via the
+        /// <see cref="LoadStateFromPersistentStorage"/> method.
+        /// </para>
+        /// <para>
+        /// If <paramref name="saveFileName"/> already exists, it will be
+        /// overwritten, not appended.
+        /// </para>
+        /// </remarks>
+        /// <param name="saveFileName">the name the save file should have on
+        /// disc, including any file extension</param>
+        /// <returns><see langword="true"/> if the variables were successfully
+        /// written into the player preferences; <see langword="false"/>
+        /// otherwise.</returns>
+        public bool SaveStateToPersistentStorage(string saveFileName)
+        {
+            var data = SerializeAllVariablesToJSON();
+            var path = System.IO.Path.Combine(Application.persistentDataPath, saveFileName);
+
+            try
+            {
+                System.IO.File.WriteAllText(path, data);
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"Failed to save state to {path}: {e.Message}");
+                return false;
+            }
         }
         
         // takes in a JSON string and converts it into a tuple of dictionaries

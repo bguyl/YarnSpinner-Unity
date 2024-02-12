@@ -1,6 +1,15 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+#if USE_TMP
+using TMPro;
+#else
+using TextMeshProUGUI = Yarn.Unity.TMPShim;
+#endif
 
 namespace Yarn.Unity
 {
@@ -17,7 +26,7 @@ namespace Yarn.Unity
 
         [SerializeField] CharacterColorData[] colorData;
 
-        [SerializeField] List<TMPro.TextMeshProUGUI> lineTexts = new List<TMPro.TextMeshProUGUI>();
+        [SerializeField] List<TextMeshProUGUI> lineTexts = new List<TextMeshProUGUI>();
 
         public override void RunLine(LocalizedLine dialogueLine, Action onDialogueLineFinished)
         {

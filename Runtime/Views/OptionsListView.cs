@@ -1,8 +1,16 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+#if USE_TMP
+using TMPro;
+#else
+using TextMeshProUGUI = Yarn.Unity.TMPShim;
+#endif
 
 namespace Yarn.Unity
 {
@@ -12,11 +20,18 @@ namespace Yarn.Unity
 
         [SerializeField] OptionView optionViewPrefab;
 
-        [SerializeField] TextMeshProUGUI lastLineText;
+        [SerializeField] MarkupPalette palette;
 
         [SerializeField] float fadeTime = 0.1f;
 
         [SerializeField] bool showUnavailableOptions = false;
+
+        [Header("Last Line Components")]
+        [SerializeField] TextMeshProUGUI lastLineText;
+        [SerializeField] GameObject lastLineContainer;
+
+        [SerializeField] TextMeshProUGUI lastLineCharacterNameText;
+        [SerializeField] GameObject lastLineCharacterNameContainer;
 
         // A cached pool of OptionView objects so that we can reuse them
         List<OptionView> optionViews = new List<OptionView>();
@@ -47,15 +62,8 @@ namespace Yarn.Unity
             lastSeenLine = dialogueLine;
             onDialogueLineFinished();
         }
-
         public override void RunOptions(DialogueOption[] dialogueOptions, Action<int> onOptionSelected)
         {
-            // Hide all existing option views
-            foreach (var optionView in optionViews)
-            {
-                optionView.gameObject.SetActive(false);
-            }
-
             // If we don't already have enough option views, create more
             while (dialogueOptions.Length > optionViews.Count)
             {
@@ -79,6 +87,7 @@ namespace Yarn.Unity
 
                 optionView.gameObject.SetActive(true);
 
+                optionView.palette = this.palette;
                 optionView.Option = option;
 
                 // The first available option is selected by default
@@ -91,18 +100,53 @@ namespace Yarn.Unity
             }
 
             // Update the last line, if one is configured
-            if (lastLineText != null)
+            if (lastLineContainer != null)
             {
-                if (lastSeenLine != null) {
-                    lastLineText.gameObject.SetActive(true);
-                    lastLineText.text = lastSeenLine.Text.Text;
-                } else {
-                    lastLineText.gameObject.SetActive(false);
+                if (lastSeenLine != null)
+                {
+                    // if we have a last line character name container
+                    // and the last line has a character then we show the nameplate
+                    // otherwise we turn off the nameplate
+                    var line = lastSeenLine.Text;
+                    if (lastLineCharacterNameContainer != null)
+                    {
+                        if (string.IsNullOrWhiteSpace(lastSeenLine.CharacterName))
+                        {
+                            lastLineCharacterNameContainer.SetActive(false);
+                        }
+                        else
+                        {
+                            line = lastSeenLine.TextWithoutCharacterName;
+                            lastLineCharacterNameContainer.SetActive(true);
+                            lastLineCharacterNameText.text = lastSeenLine.CharacterName;
+                        }
+                    }
+
+                    if (palette != null)
+                    {
+                        lastLineText.text = LineView.PaletteMarkedUpText(line, palette);
+                    }
+                    else
+                    {
+                        lastLineText.text = line.Text;
+                    }
+
+                    lastLineContainer.SetActive(true);
+                }
+                else
+                {
+                    lastLineContainer.SetActive(false);
                 }
             }
 
             // Note the delegate to call when an option is selected
             OnOptionSelected = onOptionSelected;
+
+            // sometimes (not always) the TMP layout in conjunction with the
+            // content size fitters doesn't update the rect transform
+            // until the next frame, and you get a weird pop as it resizes
+            // just forcing this to happen now instead of then
+            Relayout();
 
             // Fade it all in
             StartCoroutine(Effects.FadeAlpha(canvasGroup, 0, 1, fadeTime));
@@ -132,7 +176,7 @@ namespace Yarn.Unity
 
                 IEnumerator OptionViewWasSelectedInternal(DialogueOption selectedOption)
                 {
-                    yield return StartCoroutine(Effects.FadeAlpha(canvasGroup, 1, 0, fadeTime));
+                    yield return StartCoroutine(FadeAndDisableOptionViews(canvasGroup, 1, 0, fadeTime));
                     OnOptionSelected(selectedOption.DialogueOptionID);
                 }
             }
@@ -153,7 +197,44 @@ namespace Yarn.Unity
                 canvasGroup.interactable = false;
                 canvasGroup.blocksRaycasts = false;
 
-                StartCoroutine(Effects.FadeAlpha(canvasGroup, canvasGroup.alpha, 0, fadeTime));
+                StartCoroutine(FadeAndDisableOptionViews(canvasGroup, canvasGroup.alpha, 0, fadeTime));
+            }
+        }
+
+        /// <summary>
+        /// Fades canvas and then disables all option views.
+        /// </summary>
+        private IEnumerator FadeAndDisableOptionViews(CanvasGroup canvasGroup, float from, float to, float fadeTime)
+        {
+            yield return Effects.FadeAlpha(canvasGroup, from, to, fadeTime);
+
+            // Hide all existing option views
+            foreach (var optionView in optionViews)
+            {
+                optionView.gameObject.SetActive(false);
+            }
+        }
+
+        public void OnEnable()
+        {
+            Relayout();
+        }
+
+        private void Relayout()
+        {
+            // Force re-layout
+            var layouts = GetComponentsInChildren<UnityEngine.UI.LayoutGroup>();
+
+            // Perform the first pass of re-layout. This will update the inner horizontal group's sizing, based on the text size.
+            foreach (var layout in layouts)
+            {
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(layout.GetComponent<RectTransform>());
+            }
+            
+            // Perform the second pass of re-layout. This will update the outer vertical group's positioning of the individual elements.
+            foreach (var layout in layouts)
+            {
+                UnityEngine.UI.LayoutRebuilder.ForceRebuildLayoutImmediate(layout.GetComponent<RectTransform>());
             }
         }
     }

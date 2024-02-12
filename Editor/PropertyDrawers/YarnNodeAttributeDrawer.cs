@@ -1,3 +1,7 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using UnityEngine;
 using UnityEditor;
 
@@ -33,7 +37,10 @@ namespace Yarn.Unity
                 if (propertyPathComponents.Count == 0) {
                     testPath = attribute.yarnProjectAttribute;
                 } else {
-                    testPath = string.Join(".", propertyPathComponents) + "." + attribute.yarnProjectAttribute;
+                    var components = new System.Collections.Generic.List<string>(propertyPathComponents);
+                    components.Reverse();
+                    
+                    testPath = string.Join(".", components) + "." + attribute.yarnProjectAttribute;
                 }
 
                 projectProp = property.serializedObject.FindProperty(testPath);

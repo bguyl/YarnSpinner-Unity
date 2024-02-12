@@ -1,4 +1,8 @@
-﻿using System.Collections;
+﻿/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System;
@@ -20,10 +24,10 @@ public class QuitGameCommand : MonoBehaviour
     {
         // In the editor, leave Play Mode. In a regular build, quit the
         // app.
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         EditorApplication.isPlaying = false;
-        #else
+#else
         Application.Quit();
-        #endif        
+#endif        
     }
 }

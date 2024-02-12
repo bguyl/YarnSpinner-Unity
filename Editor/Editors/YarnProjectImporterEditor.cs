@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+﻿/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
+using System.Collections.Generic;
 using UnityEditor;
-#if UNITY_2020_2_OR_NEWER
 using UnityEditor.AssetImporters;
-#else
-using UnityEditor.Experimental.AssetImporters;
-#endif
 using UnityEngine;
 using System.Linq;
 using Yarn.Compiler;
@@ -35,7 +35,8 @@ namespace Yarn.Unity.Editor
         // YarnProjectImporter. Used during Inspector GUI drawing.
         internal static SerializedProperty CurrentProjectDefaultLanguageProperty;
 
-        const string ProjectUpgradeHelpURL = "https://docs.yarnspinner.dev";
+        const string ProjectUpgradeHelpURL = "https://docs.yarnspinner.dev/using-yarnspinner-with-unity/importing-yarn-files/yarn-projects#upgrading-yarn-projects";
+        const string CreateNewIssueURL = "https://github.com/YarnSpinnerTool/YarnSpinner-Unity/issues/new?assignees=&labels=bug&projects=&template=bug_report.md&title=Project Import Error";
 
         private SerializedProperty compileErrorsProperty;
         private SerializedProperty serializedDeclarationsProperty;
@@ -94,9 +95,15 @@ namespace Yarn.Unity.Editor
         {
             base.OnDisable();
 
-            if (AnyModifications) {
-                if (EditorUtility.DisplayDialog("Unapplied Changes", "The currently selected Yarn Project has unapplied changes. Do you want to apply them or revert?", "Apply", "Revert")) {
+            if (AnyModifications)
+            {
+                if (EditorUtility.DisplayDialog("Unapplied Changes", "The currently selected Yarn Project has unapplied changes. Do you want to apply them or revert?", "Apply", "Revert"))
+                {
+#if UNITY_2022_2_OR_NEWER
                     this.SaveChanges();
+#else
+                    this.ApplyAndImport();
+#endif
                 }
             }
         }
@@ -136,21 +143,15 @@ namespace Yarn.Unity.Editor
 
                 var locInfo = new Project.LocalizationInfo();
 
-                if (stringFile != null) {
+                if (stringFile != null)
+                {
                     string stringFilePath = AssetDatabase.GetAssetPath(stringFile);
-#if UNITY_2021
                     locInfo.Strings = Path.GetRelativePath(importerFolder, stringFilePath);
-#else
-                    locInfo.Strings = YarnProjectImporter.UnityProjectRootVariable + "/" + stringFilePath;
-#endif
                 }
-                if (assetFolder != null) {
+                if (assetFolder != null)
+                {
                     string assetFolderPath = AssetDatabase.GetAssetPath(assetFolder);
-#if UNITY_2021
                     locInfo.Assets = Path.GetRelativePath(importerFolder, assetFolderPath);
-#else
-                    locInfo.Assets = YarnProjectImporter.UnityProjectRootVariable + "/" + assetFolderPath;
-#endif
                 }
 
                 data.Localisation[locField.value.languageID] = locInfo;
@@ -201,11 +202,31 @@ namespace Yarn.Unity.Editor
 
             ui.styleSheets.Add(yarnProjectStyleSheet);
 
-            if (importData == null || importData.ImportStatus == ProjectImportData.ImportStatusCode.NeedsUpgradeFromV1) {
-                ui.Add(CreateUpgradeUI(yarnProjectImporter));
+            // if the import data is null it means import has crashed
+            // we need to let the user know and perhaps ask them to file an issue
+            if (importData == null)
+            {
+                ui.Add(CreateCriticalErrorUI());
                 return ui;
             }
 
+            // next we need to handle the two edge cases
+            // either the importData is for the older format
+            // or it's completely unknown (most likely a error)
+            // in both cases we show the respective custom UI and return
+            switch (importData.ImportStatus)
+            {
+                case ProjectImportData.ImportStatusCode.NeedsUpgradeFromV1:
+                {
+                    ui.Add(CreateUpgradeUI(yarnProjectImporter));
+                    return ui;
+                }
+                case ProjectImportData.ImportStatusCode.Unknown:
+                {
+                    ui.Add(CreateUnknownErrorUI());
+                    return ui;
+                }
+            }
 
             var importDataSO = new SerializedObject(importData);
             var diagnosticsProperty = importDataSO.FindProperty(nameof(ProjectImportData.diagnostics));
@@ -348,6 +369,25 @@ namespace Yarn.Unity.Editor
             };
             yarnInternalControls.Add(addLocalisationButton);
 
+#if USE_ADDRESSABLES
+            var updateAddressableAssetsButton = new Button();
+            updateAddressableAssetsButton.text = "Update Asset Addresses";
+            updateAddressableAssetsButton.clicked += () =>
+            {
+                YarnProjectUtility.UpdateAssetAddresses(yarnProjectImporter);
+            };
+            yarnInternalControls.Add(updateAddressableAssetsButton);
+
+            bool ShouldShowAssetsButton() => yarnProjectImporter.ImportData.localizations.Any(l => l.assetsFolder != null) && AddressableAssetSettingsDefaultObject.SettingsExists && useAddressableAssetsProperty.boolValue;
+
+            SetElementVisible(updateAddressableAssetsButton, ShouldShowAssetsButton());
+
+            useAddressableAssetsField.RegisterCallback<ChangeEvent<bool>>(evt => 
+            {
+                SetElementVisible(updateAddressableAssetsButton, ShouldShowAssetsButton());
+            });
+#endif
+
 #if USE_UNITY_LOCALIZATION
 
             localisationControls.Add(useUnityLocalisationSystemField);
@@ -362,8 +402,6 @@ namespace Yarn.Unity.Editor
                 SetElementVisible(unityControls, useUnityLocalisationSystemProperty.boolValue);
                 SetElementVisible(yarnInternalControls, !useUnityLocalisationSystemProperty.boolValue);
             });
-
-            
 #endif
 
             var cantGenerateUnityStringTableMessage = new IMGUIContainer(() =>
@@ -486,14 +524,9 @@ namespace Yarn.Unity.Editor
         {
             return base.HasModified() || AnyModifications;
         }
-
-        public override void OnInspectorGUI()
+        
+        private VisualElement CreateUpgradeUI(YarnProjectImporter importer)
         {
-            DrawDefaultInspector();
-            ApplyRevertGUI();
-        }
-
-        public VisualElement CreateUpgradeUI(YarnProjectImporter importer) {
             var ui = new VisualElement();
 
             var box = new VisualElement();
@@ -529,6 +562,56 @@ namespace Yarn.Unity.Editor
             ui.Add(new IMGUIContainer(ApplyRevertGUI));
 
             return ui;
+        }
+
+        private VisualElement CreateErrorUI(string headerText, string[] labels, string linkLabel, string link)
+        {
+            var ui = new VisualElement();
+            var box = new VisualElement();
+            box.AddToClassList("help-box");
+
+            Label header = new Label(headerText);
+            header.style.unityFontStyleAndWeight = FontStyle.Bold;
+            box.Add(header);
+
+            foreach (var label in labels)
+            {
+                box.Add(new Label(label));
+            }
+
+            var learnMoreLink = new Label(linkLabel);
+            learnMoreLink.RegisterCallback<MouseDownEvent>(evt =>
+            {
+                Application.OpenURL(link);
+            });
+            learnMoreLink.AddToClassList("link");
+            box.Add(learnMoreLink);
+
+            ui.Add(box);
+
+            ui.Add(new IMGUIContainer(ApplyRevertGUI));
+
+            return ui;
+        }
+
+        private VisualElement CreateCriticalErrorUI()
+        {
+            string[] labels = { 
+                "This is likely due to a bug on our end, and not in your project.",
+                "Try recreating the project and see if this resolves the issue."
+            };
+
+            return CreateErrorUI("This project has failed to import due to an internal error.", labels, "If the issue persists, please open an issue.", CreateNewIssueURL);
+        }
+
+        private VisualElement CreateUnknownErrorUI()
+        {
+            string[] labels = { 
+                "The type of this Yarn Project is unknown.",
+                "Try recreating the project and see if this resolves the issue."
+            };
+
+            return CreateErrorUI("This project has failed to import correctly.", labels, "If the issue persists, please open an issue.", CreateNewIssueURL);
         }
     }
 }

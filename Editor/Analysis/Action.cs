@@ -1,3 +1,7 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -162,6 +166,11 @@ namespace Yarn.Unity.ActionAnalyser
         /// prefix.
         /// </summary>
         public string MethodName { get; internal set; }
+
+        /// <summary>
+        /// Gets the short form of the method, essentially the easy to read form of <see cref="MethodName"/>.
+        /// </summary>
+        public string MethodIdentifierName { get; internal set; }
 
         /// <summary>
         /// Whether this action is a static method, or an instance method.
@@ -425,7 +434,9 @@ namespace Yarn.Unity.ActionAnalyser
                         SyntaxFactory.List(
                             new[] {
                                 SyntaxFactory.ArrayRankSpecifier(
-                                    SyntaxFactory.SeparatedList<ExpressionSyntax>()
+                                    SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
+                                        SyntaxFactory.OmittedArraySizeExpression()
+                                    )
                                 )
                             }
                         )

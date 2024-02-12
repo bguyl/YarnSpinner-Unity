@@ -1,3 +1,7 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -28,14 +32,8 @@ namespace Yarn.Unity
     /// will be done for you automatically when your code compiles.
     /// </para>
     /// </remarks>
-    public class YarnFunctionAttribute : YarnActionAttribute {
-        [Obsolete("Use " + nameof(Name) + " instead.")]
-        public string FunctionName
-        {
-            get => Name;
-            set => Name = value;
-        }
-
+    public class YarnFunctionAttribute : YarnActionAttribute
+    {
         public YarnFunctionAttribute(string name = null) => Name = name;
     }
 }

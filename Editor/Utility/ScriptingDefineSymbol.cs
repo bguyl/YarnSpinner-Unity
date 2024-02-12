@@ -1,3 +1,7 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 #define LOGGING
 
 using UnityEditor;
@@ -54,18 +58,18 @@ namespace Yarn.Unity.Editor
         {
             get
             {
-                var currentGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+                var currentGroup = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
                 return PlayerSettings
-                    .GetScriptingDefineSymbolsForGroup(currentGroup)
+                    .GetScriptingDefineSymbols(currentGroup)
                     .Split(new[] {';'}, System.StringSplitOptions.RemoveEmptyEntries)
                     .Contains(SymbolName);
             }
 
             set
             {
-                var currentGroup = EditorUserBuildSettings.selectedBuildTargetGroup;
+                var currentGroup = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(EditorUserBuildSettings.selectedBuildTargetGroup);
                 var currentDefines = PlayerSettings
-                    .GetScriptingDefineSymbolsForGroup(currentGroup)
+                    .GetScriptingDefineSymbols(currentGroup)
                     .Split(new[] {';'}, System.StringSplitOptions.RemoveEmptyEntries);
 
                 var currentDefinesList = new List<string>(currentDefines);
@@ -79,7 +83,9 @@ namespace Yarn.Unity.Editor
                 else if (!value && isPresent)
                 {
                     currentDefinesList.Remove(SymbolName);
-                } else {
+                }
+                else
+                {
                     // Nothing to do
 #if LOGGING
                     UnityEngine.Debug.Log($"SetScriptingDefineSymbolsForGroup: not {(value ? "adding" : "removing")} symbol {SymbolName} because it already {(value ? "is" : "isn't")} in the existing symbols");
@@ -93,7 +99,7 @@ namespace Yarn.Unity.Editor
                 UnityEngine.Debug.Log($"SetScriptingDefineSymbolsForGroup '{newDefinesList}'");
 #endif
 
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(currentGroup, newDefinesList);
+                PlayerSettings.SetScriptingDefineSymbols(currentGroup, newDefinesList);
             }
         }
     }

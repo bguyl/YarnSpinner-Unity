@@ -1,9 +1,9 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System.Collections.Generic;
 using UnityEditor;
-#if UNITY_2020_2_OR_NEWER
-#else
-using UnityEditor.Experimental.AssetImporters;
-#endif
 using UnityEngine;
 using System.Linq;
 

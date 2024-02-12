@@ -1,10 +1,10 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System.Collections.Generic;
 using UnityEditor;
-#if UNITY_2020_2_OR_NEWER
 using UnityEditor.AssetImporters;
-#else
-using UnityEditor.Experimental.AssetImporters;
-#endif
 using UnityEngine;
 using System.Linq;
 using Yarn.Compiler;
@@ -17,7 +17,7 @@ using UnityEngine.Localization.Tables;
 
 namespace Yarn.Unity.Editor
 {
-    [ScriptedImporter(4, new[] { "yarnproject" }, 1), HelpURL("https://yarnspinner.dev/docs/unity/components/yarn-programs/")]
+    [ScriptedImporter(5, new[] { "yarnproject" }, 1000), HelpURL("https://yarnspinner.dev/docs/unity/components/yarn-programs/")]
     [InitializeOnLoad]
     public class YarnProjectImporter : ScriptedImporter
     {
@@ -79,9 +79,12 @@ namespace Yarn.Unity.Editor
 
         public Project GetProject()
         {
-            try {
+            try
+            {
                 return Project.LoadFromFile(this.assetPath);
-            } catch (System.Text.Json.JsonException) {
+            }
+            catch (System.Exception)
+            {
                 return null;
             }
         }
@@ -109,12 +112,10 @@ namespace Yarn.Unity.Editor
 #if YARNSPINNER_DEBUG
             UnityEngine.Profiling.Profiler.enabled = true;
 #endif
-            Debug.Log("Import project " + ctx.assetPath);
 
             var projectAsset = ScriptableObject.CreateInstance<YarnProject>();
 
             projectAsset.name = Path.GetFileNameWithoutExtension(ctx.assetPath);
-
 
             // Start by creating the asset - no matter what, we need to
             // produce an asset, even if it doesn't contain valid Yarn
@@ -128,17 +129,23 @@ namespace Yarn.Unity.Editor
 
             // Attempt to load the JSON project file.
             Project project;
-            try {
+            try
+            {
                 project = Yarn.Compiler.Project.LoadFromFile(ctx.assetPath);
-            } catch (System.Exception) {
+            }
+            catch (System.Exception)
+            {
                 var text = File.ReadAllText(ctx.assetPath);
-                if (text.StartsWith("title:")) {
+                if (text.StartsWith("title:"))
+                {
                     // This is an old-style project that needs to be upgraded.
                     importData.ImportStatus = ProjectImportData.ImportStatusCode.NeedsUpgradeFromV1;
 
                     // Log to notify the user that this needs to be done.
                     ctx.LogImportError($"Yarn Project {ctx.assetPath} is a version 1 Yarn Project, and needs to be upgraded. Select it in the Inspector, and click Upgrade Yarn project.", this);
-                } else {
+                }
+                else
+                {
                     // We don't know what's going on.
                     importData.ImportStatus = ProjectImportData.ImportStatusCode.Unknown;
                 }
@@ -150,7 +157,8 @@ namespace Yarn.Unity.Editor
 
             importData.baseLanguageName = project.BaseLanguage;
 
-            foreach (var loc in project.Localisation) {
+            foreach (var loc in project.Localisation)
+            {
                 var hasStringsFile = project.TryGetStringsPath(loc.Key, out var stringsFilePath);
                 var hasAssetsFolder = project.TryGetAssetsPath(loc.Key, out var assetsFolderPath);
 
@@ -163,7 +171,8 @@ namespace Yarn.Unity.Editor
                 importData.localizations.Add(locInfo);
             }
 
-            if (project.Localisation.ContainsKey(project.BaseLanguage) == false) {
+            if (project.Localisation.ContainsKey(project.BaseLanguage) == false)
+            {
                 importData.localizations.Add(new ProjectImportData.LocalizationEntry
                 {
                     languageID = project.BaseLanguage,
@@ -176,13 +185,10 @@ namespace Yarn.Unity.Editor
 
             if (projectRelativeSourceFiles.Any())
             {
-
                 // This project depends upon this script
                 foreach (var scriptPath in projectRelativeSourceFiles)
                 {
                     string guid = AssetDatabase.AssetPathToGUID(scriptPath);
-
-                    Debug.Log($"Project {ctx.assetPath} depends on script {scriptPath}");
 
                     ctx.DependsOnSourceAsset(scriptPath);
 
@@ -197,16 +203,49 @@ namespace Yarn.Unity.Editor
 
                 job.Library = library;
 
-                compilationResult = Compiler.Compiler.Compile(job);
+                try
+                {
+                    compilationResult = Compiler.Compiler.Compile(job);
+                }
+                catch (System.Exception e)
+                {
+                    var errorMessage = $"Encountered an unhandled exception during compilation: {e.Message}";
+                    ctx.LogImportError(errorMessage, null);
+
+                    importData.diagnostics.Add(new ProjectImportData.DiagnosticEntry
+                    {
+                        yarnFile = null,
+                        errorMessages = new List<string> { errorMessage },
+                    });
+                    importData.ImportStatus = ProjectImportData.ImportStatusCode.CompilationFailed;
+                    return;
+                }
 
                 var errors = compilationResult.Diagnostics.Where(d => d.Severity == Diagnostic.DiagnosticSeverity.Error);
-
+  
                 if (errors.Count() > 0)
                 {
                     var errorGroups = errors.GroupBy(e => e.FileName);
                     foreach (var errorGroup in errorGroups)
                     {
-                        var errorMessages = errorGroup.Select(e => e.ToString());
+                        if (errorGroup.Key == null)
+                        {
+                            // ok so we have no file for some reason
+                            // so these are errors currently not tied to a file
+                            // so we instead need to just log the errors and move on
+                            foreach (var error in errorGroup)
+                            {
+                                ctx.LogImportError($"Error compiling project: {error.Message}");
+                            }
+
+                            importData.diagnostics.Add(new ProjectImportData.DiagnosticEntry
+                            {
+                                yarnFile = null,
+                                errorMessages = errorGroup.Select(e => e.Message).ToList(),
+                            });
+
+                            continue;
+                        }
 
                         var relativePath = GetRelativePath(errorGroup.Key);
 
@@ -223,6 +262,7 @@ namespace Yarn.Unity.Editor
                         // TODO: Associate this compile error to the
                         // corresponding script
 
+                        var errorMessages = errorGroup.Select(e => e.ToString());
                         importData.diagnostics.Add(new ProjectImportData.DiagnosticEntry
                         {
                             yarnFile = fileWithErrors,
@@ -290,17 +330,67 @@ namespace Yarn.Unity.Editor
 #if YARNSPINNER_DEBUG
             UnityEngine.Profiling.Profiler.enabled = false;
 #endif
+        }
 
+        /// <summary>
+        /// Checks if the modifications on the Asset Database will necessitate a reimport of the project to stay in sync with the localisation assets.
+        /// </summary>
+        /// <remarks>
+        /// Because assets can be added and removed after associating a folder of assets with a locale modifications won't be detected until runtime when they cause an error.
+        /// This is bad for many reasons, so this method will check any modified assets and see if they correspond to this Yarn Project.
+        /// If they do it will reimport the project to reassociate them.
+        /// </remarks>
+        /// <param name="modifiedAssetPaths">The list of asset paths that have been modified, that is to say assets that have been added, removed, or moved.</param>
+        public void CheckUpdatedAssetsRequireReimport(List<string> modifiedAssetPaths)
+        {
+            bool needsReimport = false;
+
+            var comparison = System.StringComparison.CurrentCulture;
+            if (Application.platform == RuntimePlatform.WindowsPlayer || Application.platform == RuntimePlatform.WindowsEditor)
+            {
+                comparison = System.StringComparison.OrdinalIgnoreCase;
+            }
+
+            var localeAssetFolderPaths = ImportData.localizations.Where(l => l.assetsFolder != null).Select(l => AssetDatabase.GetAssetPath(l.assetsFolder));
+            foreach (var path in localeAssetFolderPaths)
+            {
+                // we need to ensure we have the trailing seperator otherwise it is to be considered a file
+                // and files can never be the parent of another file
+                var assetPath = path;
+                if (!path.EndsWith(Path.DirectorySeparatorChar.ToString()))
+                {
+                    assetPath += Path.DirectorySeparatorChar.ToString();
+                }
+
+                foreach (var modified in modifiedAssetPaths)
+                {
+                    if (modified.StartsWith(assetPath, comparison))
+                    {
+                        needsReimport = true;
+                        goto SHORTCUT;
+                    }
+                }
+            }
+
+            SHORTCUT:
+            if (needsReimport)
+            {
+                AssetDatabase.ImportAsset(this.assetPath);
+            }
         }
 
         internal static string GetRelativePath(string path)
         {
-            if (path.StartsWith(UnityProjectRootPath) == false) {
+            if (path.StartsWith(UnityProjectRootPath) == false)
+            {
                 // This is not a child of the current project. If it's an
                 // absolute path, then it's enough to go on.
-                if (Path.IsPathRooted(path)) {
+                if (Path.IsPathRooted(path))
+                {
                     return path;
-                } else {
+                }
+                else
+                {
                     throw new System.ArgumentException($"Path {path} is not a child of the project root path {UnityProjectRootPath}");
                 }
             }
@@ -497,15 +587,22 @@ namespace Yarn.Unity.Editor
                     var lineID = entry.Key;
                     var stringInfo = entry.Value;
 
-                    var lineEntry = table.AddEntry(lineID, stringInfo.text);
+                    var existingEntry = table.GetEntry(lineID);
 
-                    var existingMetadata = lineEntry.GetMetadata<UnityLocalization.LineMetadata>();
+                    if (existingEntry != null)
+                    {
+                        var existingSharedMetadata = existingEntry.SharedEntry.Metadata.GetMetadata<UnityLocalization.LineMetadata>();
 
-                    if (existingMetadata != null) {
-                        lineEntry.RemoveMetadata(existingMetadata);
+                        if (existingSharedMetadata != null)
+                        {
+                            existingEntry.SharedEntry.Metadata.RemoveMetadata(existingSharedMetadata);
+                            table.MetadataEntries.Remove(existingSharedMetadata);
+                        }
                     }
 
-                    lineEntry.AddMetadata(new UnityLocalization.LineMetadata
+                    var lineEntry = table.AddEntry(lineID, stringInfo.text);
+
+                    lineEntry.SharedEntry.Metadata.AddMetadata(new UnityLocalization.LineMetadata
                     {
                         nodeName = stringInfo.nodeName,
                         tags = RemoveLineIDFromMetadata(stringInfo.metadata).ToArray(),

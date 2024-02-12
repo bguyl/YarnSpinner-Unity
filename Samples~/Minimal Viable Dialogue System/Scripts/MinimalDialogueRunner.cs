@@ -1,3 +1,7 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -27,7 +31,7 @@ public class MinimalDialogueRunner : MonoBehaviour
     void Awake()
     {
         dialogue = CreateDialogueInstance();
-        dialogue.SetProgram(project.GetProgram());
+        dialogue.SetProgram(project.Program);
 
         if (LineProvider == null)
         {

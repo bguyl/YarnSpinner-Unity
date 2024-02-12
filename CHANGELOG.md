@@ -8,9 +8,154 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ### Added
 
+- Added a Unity Project scoped settings that allows you to override some of the default behaviours of Yarn Spinner.
+  - Yarn Spinner settings are saved to the path `ProjectSettings\Packages\dev.yarnspinner\YarnSpinnerProjectSettings.json`.
+  - The settings be changed in the Project Settings window, by choosing `Edit -> Project Settings -> Yarn Spinner`.
+  - The setting currently supports three convenience features of Yarn Spinner:
+    - Automatically associating assets with localisations
+    - Automatically linking `YarnCommand` and `YarnFunction` attributed methods to the Dialogue Runner.
+    - Generating a `.ysls.json` file that stores information about your Yarn attributed methods.
+      - This file is saved to `ProjectSettings\Packages\dev.yarnspinner\generated.ysls.json`.
+      - This is an experimental feature to support better editor integration down the line. As such, this feature defaults to 'off'. 
+  - Enabling or disabling `YarnCommand` and `YarnFunction` linking, or `.ysls` generation, will cause your project to recompile.
+  - Enabling or disabling asset linking will cause a reimport of all `yarnproject` assets.
+- `Yarn.Unity.ActionAnalyser.Action` now has a `MethodIdentifierName` property, which is the short form of the method name.
+- `DialogueAdvanceInput` now supports Virtual Button names in addition to KeyCodes and Input Actions.
+  - This can be configured to work on button or key release or press. By default, the component works on release.
+- `LineView` now will add in line breaks when it encounters a self closing `[br /]` marker.
+- Yarn attributed Functions and Commands can now use constant values in addition to literals for their name.
+
 ### Changed
 
+- Update the minimum Unity version to 2021.3.
+- Fixed a bug where line pauses could sometimes not happen when the user's framerate is low.
+- Fixed a bug where the Rounded Views sample wouldn't import correctly.
+- Fixed Minimal Dialogue Runner sample that was using obsolete methods.
+- Fixed a bug where TMPShim wasn't being detected.
+- Standard library functions (like `random`, `dice`, `round_places`, etc) have been moved to the core Yarn Spinner library.
+- Fixed a bug where the audio assets in the samples weren't being linked correctly resulting in playback errors.
+- Intro Sample: Moved the Character Color view to a new stand-alone object (it's easier to explain how to do this in a tutorial!)
+- `Analyser` no longer ignores non-public methods.
+  - This is now handled during codegen side so we can better log it.
+- `ActionsGenerator` will now generate C# warnings for non-private methods that are attributed as `YarnFunction` or `YarnCommand`.
+- `ActionsGenerator` still logs to a temporary location, but now into a `dev.yarnspinner.logs` folder inside the temporary location.
+- Auto-advancing `LineView`s will no longer attempt to advance dialogue that has been stopped.
+- Actions Registration now dumps generated code into the same temporary folder the logs live in
+- `ActionsGenerator` will now generate C# warnings for incorrectly named methods that are attributed as `YarnFunction` or `YarnCommand`.
+- Fixed a bug where `AudioLineProvider` didn't allow runtime changing of the text locale.
+- Fixed a bug where the Unity Localisation strings tables would have duplicate lines after tagging all lines in a project.
+
 ### Removed
+
+- Remove certain items that were previously marked as obsolete:
+  - Obsolete method `DialogueRunner.ResetDialogue`
+  - Obsolete property `YarnFunctionAttribute.FunctionName`
+  - Obsolete property `YarnCommandAttribute.CommandString`
+  - Obsolete method `YarnProject.GetProgram`
+
+## [2.4.0] 2023-11-15
+
+### Added
+
+#### In-Line Pause Support
+
+- The built-in Line View now can now identify markup based pauses and insert pauses into the typewriter effect.
+  - To use this you can use the `pause` markup inside your lines:
+    ```
+    Alice: wow this line now has a halt [pause=500 /] inside of it
+    ```
+    - This line will stop the typewriter for 500ms after the `halt` is shown. After the 500ms delay, the rest of the line will appear.
+  - Two new Unity events have also been added to be informed when pauses happen:
+    - `onPauseStarted`
+    - `onPauseEnded`
+- Added a new `PausableTypewriter` effect that works identically to the existing `Typewriter` effect, but supports arbitrary pauses. This effect can be used in your own custom line views to add support for the `[pause/]` markup.
+- To learn more about how the pause system works, take a look at the `PausableTypewriter.GetPauseDurationsInsideLine` method!
+
+#### New Samples
+
+- Several new sample projects have been added:
+  - **Shot Reverse Shot** shows how you can use Cinemachine virtual cameras and custom dialogue views to make a shot-reverse-shot scene in your game.
+  - **Sliced Views** shows off a new alternative default line and option view prefab.
+  - **Markup Palette** demonstrates the new `MarkupPalette` system.
+  - **User Input and Yarn** shows how you can use blocking commands and TMP Input fields to get input into Yarn variables.
+  - **Pausing the Typewriter** howing how you can use the `[pause/]` marker to temporarily pause in the middle of a line.
+
+#### New Saving Features
+
+- Added two new basic save methods on `DialogueRunner` that use the persistent data storage location as their save location:
+  - `SaveStateToPersistentStorage` saves all variables known to the Dialogue Runner to a named file in the [Application.persistentDataPath](https://docs.unity3d.com/ScriptReference/Application-persistentDataPath.html) folder.
+      - These methods, `SaveStateToPersistentStorage` and `LoadStateFromPersistentStorage` are intended to replace the older `PlayerPref` based system for basic saves.
+      - Note: For more complex games, we are still assuming you will need to craft your own bespoke save system.
+
+#### Markup Palette System
+
+- The Line View and Options List View prefabs now support _markup palettes_, which allow you to customise the colours of your lines and options using Yarn Spinner's markup.
+- Markup Palettes let you associate a marker with a colour. When you use that marker in your dialogue, the text will be rendered using that colour.
+- For example, consider the following line:
+  ```
+  I'm [excited]thrilled to be here[/excited]!
+  ```
+  If you create a Markup Palette that links the word `excited` to the colour red, the words "thrilled to be here" will be red.
+  
+- The built-in Line View and Options List View prefabs have support for Markup Palettes, as well as any custom Dialogue Views you build that use the `LineView` and `OptionsListView` classes.
+
+#### Other Features
+
+- A new method (`ClearLoadedAssets`), which unloads all cached assets from the `UnityLocalisedLineProvider`, has been added.
+  - This method will forcibly unload all assets. Only call this method if you're very familiar with the Addressable Assets system and are comfortable with Yarn Spinner's internals!
+- Projects can now provide a list of line IDs within a node, using `GetLineIDsForNodes`.
+  - This is intended to be used to precache multiple nodes worth of assets, but might also be useful for debugging during development.
+- Newly created `.yarnproject` files now ignore any `.yarn` files that are in a folder whose name ends in '~', which follows Unity's behaviour.
+  - You can customise this behaviour by opening the `.yarnproject` file in a text editor and modifying the `excludeFiles` property.
+- Added `MarkupPalette` scriptable object and support for the palette inside of `LineView` and `OptionsListView` and associated `OptionView`.
+  - This is useful both as a standalone way to easily annotate your dialogue, but also as an example of the markup system.
+
+
+### Changed
+
+- Fixed a bug where `YarnNode` attributes would not display correctly in the Inspector when its property path is longer than 1.
+- Fixed a bug in the action registration source code generator that caused it to crash on certain files, which resulted in some commands not being registered at runtime.
+- Replaced the call to `Yarn.Compiler.Utility.AddTagsToLines` with `Yarn.Compiler.Utility.TagLines`.
+- Fixed incorrect order of generic parameter names for `AddFunction` methods. The usage of these functions is unchanged.
+- Fixed incorrect handling of line IDs inside the Unity Localised Line Provider preventing voice assets being loaded.
+- Fixed a crash where declaration statements without a value (`<<declare $var>>`) would crash the importer, leading to _weird_ bugs.
+- Yarn Functions and Commands can now have up to 10 parameters if you need them. (Previously, the limit was 6.)
+- The hard dependency on Text Mesh Pro is now a soft one.
+  - This change will only affect projects that do not have TextMeshPro installed in their project. For most projects, this change won't be noticed.
+- Dialogue Runner will now better wait for line providers to be ready before requesting lines.
+  - This does have the potential issue of long load times for some larger nodes, in those cases we suggest you preload more lines using `GetLineIDsForNodes` on `YarnProject`
+- `UnityLocalisedLineProvider` can now have its default setting of removing unused assets disabled, this is useful when caching multiple nodes worth of assets
+- The "Add Assets to Asset Table Collection" wizard now correctly prepends `line:` to the key, to match the documented behaviour.
+- `OptionsListView` now deactivates child options when they are not needed instead of just making them transparent.
+- When using Unity Localization, line metadata is now stored on the shared entry for a line ID, rather than only on the base language's entry. (This caused an issue where, if the game was not running in the base language, line metadata would not be available.)
+- Fixed an issue with `AudioLineProvider` that would prevent audio assets being loaded 
+- Fixed an issue with the Project editor that prevented audio assets loading when using Addressables.
+- The Yarn Project inspector window will now log errors when your inspector width is considered too small.
+  - We are pretty sure this is a bug in the UI code on Unity's end.
+  - In our testing it happens at widths less than 319 pixels, because, sure, why not!
+  - It also doesn't seem to happen in every version of Unity, so that's fun.
+- Setting a project on the dialogue runner will now also load the initial variables from this project, fixing this regression.
+- `LineView` now supports showing the character names as a standalone element.
+  - The existing behaviour is still the same with the default prefabs
+- `OptionsListView` now supports showing the character names as a standalone element.
+- `LineView` now uses the `PausableTypewriter` by default.
+  - If you don't use pauses, you won't need to change anything.
+- `Effects.Typewriter` now is a wrapper into the `PausableTypewriter` effect
+  - If you don't use pauses nothing will change
+- Yarn Projects that have no import data will no longer suggest to upgrade the project file.
+  - This solves an uncommon but *very* hard to debug error!
+- `YarnProjectImporterEditor.CreateUpgradeUI` is now private.
+- The Yarn Project editor 'upgrade' help link now correctly links to the upgrade page on the docs.
+
+### Removed
+
+- Deprecated `SaveStateToPlayerPrefs` and `LoadStateFromPlayerPrefs`.
+  - Please use `SaveStateToPersistentStorage` and `LoadStateFromPersistentStorage` instead.
+- The Actions class will no longer log every single time a command is registered.
+- Removed `YarnLinesAsCanvasText` class and associated elements, this didn't do anything and was using an approach that is no longer advisable.
+  - The `MainMenu` sample is now gone, this code was not in the package and didn't work, so it is unlikely anyone will notice this has been removed.
+- Removed the deprecated code inside `YarnProjectImporterEditor`.
+- The Addressable sample has been removed for now as it isn't well suited as an example of using Yarn Spinner and Addressables. It will return in a future release of Yarn Spinner.
 
 ## [2.3.1] 2023-07-07
 
@@ -43,6 +188,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - Added 'On Dialogue Start' event to Dialogue Runner. This event is called when the dialogue starts running. (@nrvllrgrs)
 
 ### Changed
+- TextMeshPro dependency is now optional. Example dialogue views will not function properly without TMP. As of 2023.2.0a14 TMP has been merged into UGUI.
 
 - Added code to invalidate the Program cache on awake for Yarn Projects properly. This means your Yarn Projects will be correctly compiled and referenced in the editor.
 - Dialogue Runner will now report an error and stop early if you tell it to start running a node that isn't in the provided Yarn Project.

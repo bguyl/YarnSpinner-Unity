@@ -1,3 +1,7 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using UnityEngine;
 using UnityEditor;
 using System.IO;
@@ -217,7 +221,7 @@ namespace Yarn.Unity.Editor
             public override void Action(int instanceId, string pathName, string resourceFile)
             {
                 // Produce the asset.
-                var project = new Yarn.Compiler.Project();
+                var project = YarnProjectUtility.CreateDefaultYarnProject();
                 var json = project.GetJson();
 
                 // Write it all out to disk as UTF-8

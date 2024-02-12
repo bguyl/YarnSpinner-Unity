@@ -1,4 +1,8 @@
-﻿using System;
+﻿/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -320,17 +324,24 @@ namespace Yarn.Unity.ActionAnalyser
             }
         }
 
-        public static IEnumerable<Action> GetActions(CSharpCompilation compilation, Microsoft.CodeAnalysis.SyntaxTree tree)
+        public static IEnumerable<Action> GetActions(CSharpCompilation compilation, Microsoft.CodeAnalysis.SyntaxTree tree, Yarn.Unity.ILogger yLogger = null)
         {
+            var logger = yLogger;
+            if (logger == null)
+            {
+                logger = new NullLogger();
+            }
+
             var root = tree.GetCompilationUnitRoot();
 
             SemanticModel model = null;
 
-            if (compilation != null) {
+            if (compilation != null)
+            {
                 model = compilation.GetSemanticModel(tree);
             }
 
-            return GetAttributeActions(root, model).Concat(GetRuntimeDefinedActions(root, model));
+            return GetAttributeActions(root, model, logger).Concat(GetRuntimeDefinedActions(root, model));
         }
 
         private static IEnumerable<Action> GetRuntimeDefinedActions(CompilationUnitSyntax root, SemanticModel model)
@@ -390,9 +401,8 @@ namespace Yarn.Unity.ActionAnalyser
             }
         }
 
-        private static IEnumerable<Action> GetAttributeActions(CompilationUnitSyntax root, SemanticModel model)
+        private static IEnumerable<Action> GetAttributeActions(CompilationUnitSyntax root, SemanticModel model, Yarn.Unity.ILogger logger)
         {
-
             var methodInfos = root
                 .DescendantNodes()
                 .OfType<MethodDeclarationSyntax>()
@@ -403,8 +413,7 @@ namespace Yarn.Unity.ActionAnalyser
                 {
                     return (MethodDeclaration: decl, Symbol: model.GetDeclaredSymbol(decl));
                 })
-                .Where(pair => pair.Symbol != null)
-                .Where(pair => pair.Symbol.DeclaredAccessibility == Accessibility.Public);
+                .Where(pair => pair.Symbol != null);
 
             var actionMethods = methodsAndSymbols
                 .Select(pair =>
@@ -419,21 +428,29 @@ namespace Yarn.Unity.ActionAnalyser
             {
                 var attr = methodInfo.ActionAttribute;
 
-                string actionName;
+                // working on an assumption that most people just use the method name
+                string actionName = methodInfo.MethodDeclaration.Identifier.ToString();
 
-                // If the attribute has an argument list, and the first argument
-                // is a string, then use that string's value as the action name.
-                if (attr.ArgumentList != null
-                    && attr.ArgumentList.Arguments.First().Expression is LiteralExpressionSyntax commandName
-                    && commandName.Kind() == SyntaxKind.StringLiteralExpression
-                    && commandName.Token.Value is string name)
+                // handling the situation where they have provided arguments
+                // if we have an argument list
+                if (attr.ArgumentList != null)
                 {
-                    actionName = name;
-                }
-                else
-                {
-                    // Otherwise, use the method's name.
-                    actionName = methodInfo.MethodDeclaration.Identifier.ToString();
+                    // we resolve the value of first item in that list
+                    // and if it's a string we use that as the action name
+                    var constantValue = model.GetConstantValue(attr.ArgumentList.Arguments.First().Expression);
+                    if (constantValue.HasValue)
+                    {
+                        if (constantValue.Value is string)
+                        {
+                            logger.WriteLine($"resolved constant expression value for the action name: {constantValue.Value.ToString()}");
+                            actionName = constantValue.Value as string;
+                        }
+                        else
+                        {
+                            // Otherwise just logging the incorrect type and moving on with our life
+                            logger.WriteLine($"resolved constant expression value for the action name, but it is not a string, skipping: {constantValue.Value.ToString()}");
+                        }
+                    }
                 }
 
                 var position = methodInfo.MethodDeclaration.GetLocation();
@@ -448,6 +465,7 @@ namespace Yarn.Unity.ActionAnalyser
                     Name = actionName,
                     Type = methodInfo.ActionType,
                     MethodName = $"{containerName}.{methodInfo.MethodDeclaration.Identifier}",
+                    MethodIdentifierName = methodInfo.MethodDeclaration.Identifier.ToString(),
                     MethodSymbol = methodInfo.Symbol,
                     IsStatic = methodInfo.Symbol.IsStatic,
                     Declaration = methodInfo.MethodDeclaration,
@@ -492,8 +510,6 @@ namespace Yarn.Unity.ActionAnalyser
             // default value; other parts of the action detection process will throw
             // errors.
             return default;
-
-
         }
 
         private static IEnumerable<Parameter> GetParameters(IMethodSymbol symbol)
@@ -585,6 +601,127 @@ namespace Yarn.Unity.ActionAnalyser
             }
 
             return null;
+        }
+
+        // these are basically just ripped straight from the LSP
+        // should maybe look at making these more accessible, for now the code dupe is fine IMO
+        public static string GetActionTrivia(MethodDeclarationSyntax method, Yarn.Unity.ILogger logger)
+        {
+            // The main string to use as the function's documentation.
+            if (method.HasLeadingTrivia)
+            {
+                var trivias = method.GetLeadingTrivia();
+                var structuredTrivia = trivias.LastOrDefault(t => t.HasStructure);
+                if (structuredTrivia.Kind() != SyntaxKind.None)
+                {
+                    // The method contains structured trivia. Extract the
+                    // documentation for it.
+                    logger.WriteLine("trivia is structured");
+                    return GetDocumentationFromStructuredTrivia(structuredTrivia);
+                }
+                else
+                {
+                    // There isn't any structured trivia, but perhaps there's a
+                    // comment above the method, which we can use as our
+                    // documentation.
+                    logger.WriteLine("trivia is unstructured");
+                    return GetDocumentationFromUnstructuredTrivia(trivias);
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+        private static string GetDocumentationFromUnstructuredTrivia(SyntaxTriviaList trivias)
+        {
+            string documentation;
+            bool emptyLineFlag = false;
+            var documentationParts = Enumerable.Empty<string>();
+
+            // loop in reverse order until hit something that doesn't look like it's related
+            foreach (var trivia in trivias.Reverse())
+            {
+                var doneWithTrivia = false;
+                switch (trivia.Kind())
+                {
+                    case SyntaxKind.EndOfLineTrivia:
+                        // if we hit two lines in a row without a comment/attribute inbetween, we're done collecting trivia
+                        if (emptyLineFlag == true) { doneWithTrivia = true; }
+                        emptyLineFlag = true;
+                        break;
+                    case SyntaxKind.WhitespaceTrivia:
+                        break;
+                    case SyntaxKind.Attribute:
+                        emptyLineFlag = false;
+                        break;
+                    case SyntaxKind.SingleLineCommentTrivia:
+                    case SyntaxKind.MultiLineCommentTrivia:
+                        documentationParts = documentationParts.Prepend(trivia.ToString().Trim('/', ' '));
+                        emptyLineFlag = false;
+                        break;
+                    default:
+                        doneWithTrivia = true;
+                        break;
+                }
+
+                if (doneWithTrivia)
+                {
+                    break;
+                }
+            }
+
+            documentation = string.Join(" ", documentationParts);
+            return documentation;
+        }
+        private static string GetDocumentationFromStructuredTrivia(SyntaxTrivia structuredTrivia)
+        {
+            string documentation;
+            var triviaStructure = structuredTrivia.GetStructure();
+            if (triviaStructure == null)
+            {
+                return null;
+            }
+
+            string ExtractStructuredTrivia(string tagName)
+            {
+                // Find the tag that matches the requested name.
+                var triviaMatch = triviaStructure
+                    .ChildNodes()
+                    .OfType<XmlElementSyntax>()
+                    .FirstOrDefault(x =>
+                        x.StartTag.Name.ToString() == tagName
+                    );
+
+                if (triviaMatch != null
+                    && triviaMatch.Kind() != SyntaxKind.None
+                    && triviaMatch.Content.Any())
+                {
+                    // Get all content from this element that isn't a newline, and
+                    // join it up into a single string.
+                    var v = triviaMatch
+                        .Content[0]
+                        .ChildTokens()
+                        .Where(ct => ct.Kind() != SyntaxKind.XmlTextLiteralNewLineToken)
+                        .Select(ct => ct.ValueText.Trim());
+
+                    return string.Join(" ", v).Trim();
+                }
+
+                return null;
+            }
+
+            var summary = ExtractStructuredTrivia("summary");
+            var remarks = ExtractStructuredTrivia("remarks");
+
+            documentation = summary ?? triviaStructure.ToString();
+
+            if (remarks != null)
+            {
+                documentation += "\n\n" + remarks;
+            }
+
+            return documentation;
         }
     }
 }

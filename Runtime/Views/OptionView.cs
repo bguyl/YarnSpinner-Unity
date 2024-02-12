@@ -1,7 +1,15 @@
+/*
+Yarn Spinner is licensed to you under the terms found in the file LICENSE.md.
+*/
+
 using System;
 using UnityEngine;
-using TMPro;
 using UnityEngine.EventSystems;
+#if USE_TMP
+using TMPro;
+#else
+using TextMeshProUGUI = Yarn.Unity.TMPShim;
+#endif
 
 namespace Yarn.Unity
 {
@@ -11,6 +19,7 @@ namespace Yarn.Unity
         [SerializeField] bool showCharacterName = false;
 
         public Action<DialogueOption> OnOptionSelected;
+        public MarkupPalette palette;
 
         DialogueOption _option;
 
@@ -28,14 +37,25 @@ namespace Yarn.Unity
 
                 // When we're given an Option, use its text and update our
                 // interactibility.
+                Markup.MarkupParseResult line;
                 if (showCharacterName)
                 {
-                    text.text = value.Line.Text.Text;
+                    line = value.Line.Text;
                 }
                 else
                 {
-                    text.text = value.Line.TextWithoutCharacterName.Text;
+                    line = value.Line.TextWithoutCharacterName;
                 }
+
+                if (palette != null)
+                {
+                    text.text = LineView.PaletteMarkedUpText(line, palette, false);
+                }
+                else
+                {
+                    text.text = line.Text;
+                }
+
                 interactable = value.IsAvailable;
             }
         }
