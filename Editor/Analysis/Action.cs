@@ -293,7 +293,7 @@ namespace Yarn.Unity.ActionAnalyser
             throw new NotImplementedException();
         }
 
-        public SyntaxNode GetRegistrationSyntax(string dialogueRunnerVariableName = "dialogueRunner")
+        public StatementSyntax GetRegistrationSyntax(string dialogueRunnerVariableName = "dialogueRunner")
         {
             string registrationMethodName;
             switch (Type)
@@ -374,7 +374,7 @@ namespace Yarn.Unity.ActionAnalyser
 
             var invocationExpressionSyntax = SyntaxFactory.InvocationExpression(addCommandHandlerExpression, arguments);
 
-            var invocationStatement = SyntaxFactory.ExpressionStatement(invocationExpressionSyntax);
+            StatementSyntax invocationStatement = SyntaxFactory.ExpressionStatement(invocationExpressionSyntax);
 
             return invocationStatement;
         }
